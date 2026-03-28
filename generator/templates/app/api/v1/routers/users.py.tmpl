@@ -6,7 +6,7 @@ from app.db.session import get_db
 from pymongo.database import Database
 from app.db.session import get_db
 {{- end }}
-{{- if .UseClerk }}
+{{- if or .UseClerk .UseCognito }}
 from app.core.security import require_auth, get_optional_auth_id
 {{- end }}
 from app.schemas.user import UserCreate, UserRead
@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("", response_model=list[UserRead])
 def list_users(
     db: Session = Depends(get_db),
-{{- if .UseClerk }}
+{{- if or .UseClerk .UseCognito }}
     # Remove get_optional_auth_id and use require_auth to make this endpoint protected
     user_id: str | None = Depends(get_optional_auth_id),
 {{- end }}
@@ -29,7 +29,7 @@ def list_users(
 def create_user(
     user: UserCreate,
     db: Session = Depends(get_db),
-{{- if .UseClerk }}
+{{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
 {{- end }}
 ):
@@ -38,7 +38,7 @@ def create_user(
 @router.get("", response_model=list[UserRead])
 def list_users(
     db: Database = Depends(get_db),
-{{- if .UseClerk }}
+{{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
 {{- end }}
 ):
@@ -48,7 +48,7 @@ def list_users(
 def create_user(
     user: UserCreate,
     db: Database = Depends(get_db),
-{{- if .UseClerk }}
+{{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
 {{- end }}
 ):
@@ -56,7 +56,7 @@ def create_user(
 {{- else }}
 @router.get("", response_model=list[UserRead])
 async def list_users(
-{{- if .UseClerk }}
+{{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
 {{- end }}
 ):
@@ -65,7 +65,7 @@ async def list_users(
 @router.post("", response_model=UserRead)
 async def create_user(
     user: UserCreate,
-{{- if .UseClerk }}
+{{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
 {{- end }}
 ):

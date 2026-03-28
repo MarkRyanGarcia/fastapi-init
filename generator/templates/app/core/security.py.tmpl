@@ -88,6 +88,18 @@ def _extract_bearer(request: Request) -> str | None:
 
 
 def get_optional_auth_id(request: Request) -> str | None:
+    """
+    Returns the Cognito user_id (sub) if the request carries a valid JWT,
+    or None if unauthenticated. Use this for endpoints that work for both
+    guests and signed-in users.
+
+    Usage:
+        @router.get("/feed")
+        def feed(user_id: str | None = Depends(get_optional_auth_id)):
+            if user_id:
+                return personalized_feed(user_id)
+            return public_feed()
+    """
     token = _extract_bearer(request)
     if not token:
         return None
@@ -99,6 +111,20 @@ def get_optional_auth_id(request: Request) -> str | None:
 
 
 def require_auth(request: Request) -> str:
+    """
+    Returns the Cognito user_id (sub) for the authenticated user.
+    Raises HTTP 401 if the JWT is missing or invalid.
+    Use this for endpoints that must be protected.
+
+    Usage:
+        @router.get("/me")
+        def get_me(user_id: str = Depends(require_auth)):
+            return {"user_id": user_id}
+
+        @router.post("/items")
+        def create_item(item: ItemCreate, user_id: str = Depends(require_auth)):
+            return ItemService.create(item, owner_id=user_id)
+    """
     token = _extract_bearer(request)
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
