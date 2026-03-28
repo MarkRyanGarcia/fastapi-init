@@ -25,16 +25,27 @@ type Model struct {
 }
 
 func InitialModel() Model {
+	return InitialModelWithName("")
+}
+
+func InitialModelWithName(name string) Model {
 	ti := textinput.New()
 	ti.Placeholder = "my-fastapi-app"
-	ti.Focus()
 	ti.CharLimit = 32
 	ti.Width = 20
 
+	state := stateInputName
+	if name != "" {
+		state = stateSelectDB
+	} else {
+		ti.Focus()
+	}
+
 	return Model{
-		State:     stateInputName,
-		TextInput: ti,
-		Choices:   []string{"PostgreSQL (SQLAlchemy)", "MongoDB (Beanie)", "SQLite (Development)"},
+		State:       state,
+		TextInput:   ti,
+		ProjectName: name,
+		Choices:     []string{"PostgreSQL (SQLAlchemy)", "MongoDB (Beanie)", "SQLite (Development)"},
 	}
 }
 

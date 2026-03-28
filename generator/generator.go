@@ -13,6 +13,7 @@ var templateFS embed.FS
 
 type ProjectConfig struct {
 	ProjectName       string
+	OutputDir         string
 	Database          string
 	IncludeSQLAlchemy bool
 	IncludeMongoDB    bool
@@ -57,13 +58,16 @@ func rawFileMap() map[string]string {
 }
 
 func CreateProject(cfg ProjectConfig) error {
+	if cfg.OutputDir == "" {
+		cfg.OutputDir = cfg.ProjectName
+	}
 	for dest, tmplPath := range fileMap() {
 		if err := writeTemplate(cfg, dest, tmplPath); err != nil {
 			return err
 		}
 	}
 	for dest, src := range rawFileMap() {
-		if err := copyRaw(cfg.ProjectName, dest, src); err != nil {
+		if err := copyRaw(cfg.OutputDir, dest, src); err != nil {
 			return err
 		}
 	}
@@ -71,7 +75,7 @@ func CreateProject(cfg ProjectConfig) error {
 }
 
 func writeTemplate(cfg ProjectConfig, dest, tmplPath string) error {
-	outPath := filepath.Join(cfg.ProjectName, filepath.FromSlash(dest))
+	outPath := filepath.Join(cfg.OutputDir, filepath.FromSlash(dest))
 	if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
 		return err
 	}
@@ -87,8 +91,8 @@ func writeTemplate(cfg ProjectConfig, dest, tmplPath string) error {
 	return tmpl.Execute(f, cfg)
 }
 
-func copyRaw(projectName, dest, src string) error {
-	outPath := filepath.Join(projectName, filepath.FromSlash(dest))
+func copyRaw(outputDir, dest, src string) error {
+	outPath := filepath.Join(outputDir, filepath.FromSlash(dest))
 	if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
 		return err
 	}
