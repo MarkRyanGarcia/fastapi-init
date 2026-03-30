@@ -2,45 +2,60 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
-  goreleaser:
-    name: GoReleaser
+  tag-and-release:
+    name: Tag, GoReleaser & PyPI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Bump patch version and tag
+        id: tag
+        run: |
+          LATEST=$(git tag --list 'v*' --sort=-version:refname | head -n1)
+          LATEST=${LATEST:-v0.0.0}
+
+          VERSION=${LATEST#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+
+          NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          echo "Latest: $LATEST → New: $NEW_TAG"
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Update VERSION file
+          echo "${MAJOR}.${MINOR}.$((PATCH + 1))" > VERSION
+          git add VERSION
+          git commit -m "chore: bump version to $NEW_TAG [skip ci]"
+          git push
+
+          git tag $NEW_TAG
+          git push origin $NEW_TAG
 
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
 
-      - uses: goreleaser/goreleaser-action@v6
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  pypi:
-    name: PyPI
-    runs-on: ubuntu-latest
-    needs: goreleaser
-    environment:
-      name: pypi
-      url: https://pypi.org/p/fapi-init
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
