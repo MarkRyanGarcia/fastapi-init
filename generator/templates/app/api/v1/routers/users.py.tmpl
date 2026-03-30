@@ -26,6 +26,10 @@ from app.services.user_service import UserService
 {{- if or .UseClerk .UseCognito }}
 from app.core.security import require_auth, get_optional_auth_id
 {{- end }}
+{{- if .UseRedis }}
+import redis.asyncio as aioredis
+from app.core.cache import get_redis
+{{- end }}
 
 router = APIRouter()
 
@@ -35,6 +39,9 @@ async def list_users(
     db: Session = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     result = await crud_users.get_multi(db)
@@ -47,43 +54,58 @@ async def create_user(
 {{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
 {{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
+{{- end }}
 ):
     return await crud_users.create(db, UserCreateInternal(**user.model_dump()))
 {{- else if or .UseSQLModel .IncludeSQLAlchemy }}
 @router.get("", response_model=list[UserRead])
-def list_users(
+async def list_users(
     db: Session = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return UserService.get_all(db)
 
 @router.post("", response_model=UserRead)
-def create_user(
+async def create_user(
     user: UserCreate,
     db: Session = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return UserService.create(db, user)
 {{- else if .IncludeMongoDB }}
 @router.get("", response_model=list[UserRead])
-def list_users(
+async def list_users(
     db: Database = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return UserService.get_all(db)
 
 @router.post("", response_model=UserRead)
-def create_user(
+async def create_user(
     user: UserCreate,
     db: Database = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return UserService.create(db, user)
@@ -93,6 +115,9 @@ async def list_users(
 {{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
 {{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
+{{- end }}
 ):
     return await UserService.get_all()
 
@@ -101,6 +126,9 @@ async def create_user(
     user: UserCreate,
 {{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return await UserService.create(user)

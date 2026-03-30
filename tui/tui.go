@@ -34,6 +34,7 @@ const (
 	stateSelectAuth
 	stateSelectPipenv
 	stateSelectDocker
+	stateSelectRedis
 	stateSelectVenv
 	stateDone
 )
@@ -52,6 +53,7 @@ type Model struct {
 	UsePipenv    bool
 	SetupVenv    bool
 	UseDocker    bool
+	UseRedis     bool
 	Quitting     bool
 }
 
@@ -131,6 +133,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Cursor = 0
 			case stateSelectDocker:
 				m.UseDocker = m.Cursor == 0
+				m.State = stateSelectRedis
+				m.Cursor = 0
+			case stateSelectRedis:
+				m.UseRedis = m.Cursor == 0
 				m.State = stateSelectVenv
 				m.Cursor = 0
 			case stateSelectVenv:
@@ -158,7 +164,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.Cursor < 2 {
 					m.Cursor++
 				}
-			case stateSelectPipenv, stateSelectVenv, stateSelectDocker:
+			case stateSelectPipenv, stateSelectVenv, stateSelectDocker, stateSelectRedis:
 				if m.Cursor < 1 {
 					m.Cursor++
 				}
@@ -264,6 +270,15 @@ func (m Model) View() string {
 			hint,
 		)
 
+	case stateSelectRedis:
+		return fmt.Sprintf(
+			"%s\n%s\n\n%s\n%s",
+			pipe(),
+			pipe()+"  "+cyan.Render("Add Redis caching?"),
+			renderOptions([]string{"Yes", "No"}, m.Cursor),
+			hint,
+		)
+
 	case stateSelectVenv:
 		startLabel := "Install with " + pkgManagerLabel(m.UsePipenv) + " and start now?"
 		if m.UseDocker {
@@ -312,6 +327,11 @@ func (m Model) Summary() string {
 	sb.WriteString(summaryRow("Pkg manager:   ", pkgManager))
 	sb.WriteString(summaryRow("Install & start: ", installNow))
 	sb.WriteString(summaryRow("Docker:        ", docker))
+	redis := "No"
+	if m.UseRedis {
+		redis = "Yes"
+	}
+	sb.WriteString(summaryRow("Redis:         ", redis))
 	sb.WriteString(pipe() + "\n")
 	sb.WriteString(checkSty.Render("◇  ") + green.Render("Scaffolding project in ./"+m.ProjectName+"...") + "\n")
 

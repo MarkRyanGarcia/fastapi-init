@@ -6,17 +6,20 @@ services:
     env_file:
       - .env
     depends_on:
-{{- if .IncludeSQLAlchemy }}
+{{- if or .IncludeSQLAlchemy .UseSQLModel .UseFastCRUD }}
       - db
 {{- else if .IncludeMongoDB }}
       - mongo
+{{- end }}
+{{- if .UseRedis }}
+      - redis
 {{- end }}
     develop:
       watch:
         - action: sync
           path: .
           target: /app
-{{- if .IncludeSQLAlchemy }}
+{{- if or .IncludeSQLAlchemy .UseSQLModel .UseFastCRUD }}
 
   db:
     image: postgres:16-alpine
@@ -37,12 +40,20 @@ services:
     volumes:
       - mongo_data:/data/db
 {{- end }}
-{{- if .IncludeSQLAlchemy }}
+{{- if .UseRedis }}
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+{{- end }}
 
 volumes:
+{{- if or .IncludeSQLAlchemy .UseSQLModel .UseFastCRUD }}
   postgres_data:
 {{- else if .IncludeMongoDB }}
-
-volumes:
   mongo_data:
+{{- end }}
+{{- if .UseRedis }}
+  redis_data:
 {{- end }}

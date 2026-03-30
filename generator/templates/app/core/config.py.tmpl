@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     COGNITO_USER_POOL_ID: str = ""
     COGNITO_APP_CLIENT_ID: str = ""
 {{- end }}
+{{- if .UseRedis }}
+    REDIS_URL: str = "redis://{{ if .UseDocker }}redis{{ else }}localhost{{ end }}:6379"
+{{- end }}
 
     class Config:
         env_file = ".env"

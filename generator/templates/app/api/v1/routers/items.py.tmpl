@@ -26,6 +26,10 @@ from app.services.item_service import ItemService
 {{- if or .UseClerk .UseCognito }}
 from app.core.security import require_auth, get_optional_auth_id
 {{- end }}
+{{- if .UseRedis }}
+import redis.asyncio as aioredis
+from app.core.cache import get_redis
+{{- end }}
 
 router = APIRouter()
 
@@ -35,6 +39,9 @@ async def list_items(
     db: Session = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     result = await crud_items.get_multi(db)
@@ -47,43 +54,58 @@ async def create_item(
 {{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
 {{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
+{{- end }}
 ):
     return await crud_items.create(db, ItemCreateInternal(**item.model_dump()))
 {{- else if or .UseSQLModel .IncludeSQLAlchemy }}
 @router.get("", response_model=list[ItemRead])
-def list_items(
+async def list_items(
     db: Session = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return ItemService.get_all(db)
 
 @router.post("", response_model=ItemRead)
-def create_item(
+async def create_item(
     item: ItemCreate,
     db: Session = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return ItemService.create(db, item)
 {{- else if .IncludeMongoDB }}
 @router.get("", response_model=list[ItemRead])
-def list_items(
+async def list_items(
     db: Database = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return ItemService.get_all(db)
 
 @router.post("", response_model=ItemRead)
-def create_item(
+async def create_item(
     item: ItemCreate,
     db: Database = Depends(get_db),
 {{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return ItemService.create(db, item)
@@ -93,6 +115,9 @@ async def list_items(
 {{- if or .UseClerk .UseCognito }}
     user_id: str | None = Depends(get_optional_auth_id),
 {{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
+{{- end }}
 ):
     return await ItemService.get_all()
 
@@ -101,6 +126,9 @@ async def create_item(
     item: ItemCreate,
 {{- if or .UseClerk .UseCognito }}
     user_id: str = Depends(require_auth),
+{{- end }}
+{{- if .UseRedis }}
+    redis: aioredis.Redis = Depends(get_redis),
 {{- end }}
 ):
     return await ItemService.create(item)

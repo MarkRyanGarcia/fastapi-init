@@ -82,6 +82,7 @@ func main() {
 		UsePipenv:         m.UsePipenv,
 		SetupVenv:         m.SetupVenv,
 		UseDocker:         m.UseDocker,
+		UseRedis:          m.UseRedis,
 	}
 
 	if m.UseDocker && !generator.IsDockerRunning() {

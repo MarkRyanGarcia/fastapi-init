@@ -26,5 +26,8 @@ clerk-backend-api
 python-jose[cryptography]
 httpx
 {{- end }}
+{{- if .UseRedis }}
+redis[asyncio]
+{{- end }}
 httpx
 pytest

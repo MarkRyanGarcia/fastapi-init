@@ -32,6 +32,9 @@ clerk-backend-api = "*"
 python-jose = {extras = ["cryptography"], version = "*"}
 httpx = "*"
 {{- end }}
+{{- if .UseRedis }}
+redis = {extras = ["asyncio"], version = "*"}
+{{- end }}
 
 [dev-packages]
 httpx = "*"

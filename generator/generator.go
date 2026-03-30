@@ -26,6 +26,7 @@ type ProjectConfig struct {
 	UsePipenv         bool
 	SetupVenv         bool
 	UseDocker         bool
+	UseRedis          bool
 }
 
 // fileMap maps destination path -> template path (executed as Go templates)
@@ -42,6 +43,7 @@ func fileMap() map[string]string {
 		"app/api/v1/routers/items.py":       "templates/app/api/v1/routers/items.py.tmpl",
 		"app/core/config.py":                "templates/app/core/config.py.tmpl",
 		"app/core/security.py":              "templates/app/core/security.py.tmpl",
+		"app/core/cache.py":                 "templates/app/core/cache.py.tmpl",
 		"app/db/session.py":                 "templates/app/db/session.py.tmpl",
 		"app/db/base.py":                    "templates/app/db/base.py.tmpl",
 		"app/models/user.py":                "templates/app/models/user.py.tmpl",
@@ -105,6 +107,10 @@ func CreateProject(cfg ProjectConfig) error {
 		}
 		// Skip SQLAlchemy-only base for SQLModel/FastCRUD
 		if (cfg.UseSQLModel || cfg.UseFastCRUD) && dest == "app/db/base.py" {
+			continue
+		}
+		// Skip cache module if Redis not requested
+		if !cfg.UseRedis && dest == "app/core/cache.py" {
 			continue
 		}
 		if err := writeTemplate(cfg, dest, tmplPath); err != nil {
